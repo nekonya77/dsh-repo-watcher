@@ -1,0 +1,3 @@
+- insert:
+    - id: dsh-repo-watcher
+      name: 'dsh-repo-watcher'

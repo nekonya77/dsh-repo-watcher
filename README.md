@@ -7,8 +7,11 @@
 ## 安装
 
 ```bash
-dsh plugin --profile desktop add dsh-repo-watcher
+# 装 Release 里的预构建包（当前可用）
+dsh plugin --profile desktop add https://github.com/clair0314/dsh-repo-watcher/releases/download/v0.1.0/dsh-repo-watcher-0.1.0.tgz
 ```
+
+发布到 npm 之后，也可以直接 `dsh plugin --profile desktop add dsh-repo-watcher`。
 
 装完重启 DSH。打开 **设置 → 仓库雷达**。
 

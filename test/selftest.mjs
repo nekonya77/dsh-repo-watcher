@@ -4,7 +4,7 @@ import { mkdtempSync, rmSync, readFileSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { Readable } from 'node:stream';
-import { apply, name, inject } from '../lib/index.js';
+import { apply, name, inject, parseRef } from '../lib/index.js';
 
 const dir = mkdtempSync(path.join(tmpdir(), 'repo-watcher-'));
 process.env.DSH_REPO_WATCHER_HOME = dir;
@@ -94,9 +94,42 @@ class FakeHeaders {
   }
 }
 
+const giteeIssues = [
+  {
+    id: 501,
+    number: 3,
+    title: "Gitee 上的 issue",
+    state: "open",
+    user: { login: "carol" },
+    html_url: "https://gitee.com/octo/demo/issues/3",
+    updated_at: "2026-11-11T08:00:00Z",
+    created_at: "2026-11-10T08:00:00Z",
+  },
+];
+const giteePulls = [
+  {
+    id: 502,
+    number: 4,
+    title: "Gitee 上的 PR",
+    state: "open",
+    user: { login: "dave" },
+    html_url: "https://gitee.com/octo/demo/pulls/4",
+    updated_at: "2026-11-11T09:00:00Z",
+    created_at: "2026-11-11T09:00:00Z",
+  },
+];
+
 let fetchCalls = 0;
-globalThis.fetch = async () => {
+let lastUrl = "";
+globalThis.fetch = async (url) => {
   fetchCalls += 1;
+  lastUrl = String(url);
+  const isGitee = lastUrl.startsWith("https://gitee.com/api/v5");
+  const body = isGitee
+    ? lastUrl.includes("/pulls")
+      ? giteePulls
+      : giteeIssues
+    : issues;
   return {
     status: 200,
     ok: true,
@@ -106,7 +139,7 @@ globalThis.fetch = async () => {
         ["x-ratelimit-remaining", "59"],
       ])
     ),
-    json: async () => issues,
+    json: async () => body,
   };
 };
 const origFetch = globalThis.fetch;
@@ -159,6 +192,30 @@ async function main() {
   ok(JSON.parse(r.body).repos.length === 0, '移除生效');
 
   ok(fetchCalls >= 1, '走了 fetch');
+
+  // ---- Gitee ----
+  r = await call('POST', '/repo-watcher/api/repos', { slug: 'gitee:octo/demo' });
+  st = JSON.parse(r.body);
+  ok(r.status === 200, '添加 Gitee 仓库 200');
+  const gh = st.repos.find((x) => x.provider === 'gitee');
+  ok(Boolean(gh), 'Gitee 仓库带 provider 字段');
+  ok(gh && gh.url === 'https://gitee.com/octo/demo', 'Gitee 链接正确');
+  ok(gh && gh.items.length === 2, 'Gitee issue + PR 都抓到了');
+  ok(gh && gh.items.some((i) => i.type === 'pr'), 'Gitee PR 类型识别');
+  ok(lastUrl.startsWith('https://gitee.com/api/v5/repos/octo/demo/pulls'), '最后请求打到了 Gitee pulls 端点');
+
+  r = await call('POST', '/repo-watcher/api/repos', { slug: 'octo/demo' });
+  ok(r.status === 200, '重新添加 GitHub 仓库 200');
+  r = await call('POST', '/repo-watcher/api/repos', { slug: 'octo/demo' });
+  ok(r.status === 400 && /已经在盯着/.test(JSON.parse(r.body).error), '同名 GitHub 仓库不能重复添加');
+
+  r = await call('POST', '/repo-watcher/api/remove', { slug: 'gitee:octo/demo' });
+  ok(JSON.parse(r.body).repos.length === 1, '移除 Gitee 仓库生效');
+
+  ok(parseRef('https://gitee.com/a/b').key === 'gitee:a/b', 'parseRef: gitee 链接');
+  ok(parseRef('https://github.com/a/b/issues/1?x=2').key === 'a/b', 'parseRef: 带尾巴的 github 链接');
+  ok(parseRef('GITEE:a/b.git').key === 'gitee:a/b', 'parseRef: gitee: 前缀 + .git');
+  ok(parseRef('a/b').provider === 'github', 'parseRef: 默认 github');
 
   rmSync(dir, { recursive: true, force: true });
   globalThis.fetch = origFetch;

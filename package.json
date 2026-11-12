@@ -1,7 +1,7 @@
 {
   "name": "dsh-repo-watcher",
-  "version": "0.1.0",
-  "description": "盯住 GitHub 仓库：有新的 issue / PR 就提醒你，让 AI 接着干活",
+  "version": "0.1.1",
+  "description": "盯住 GitHub / Gitee 仓库：有新的 issue / PR 就提醒你，让 AI 接着干活",
   "type": "module",
   "main": "lib/index.js",
   "exports": {
@@ -19,6 +19,7 @@
     "dsh",
     "dsh-plugin",
     "github",
+    "gitee",
     "issues",
     "pull-requests",
     "watch"

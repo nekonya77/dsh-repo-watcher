@@ -1,6 +1,6 @@
 # dsh-repo-watcher（仓库雷达）
 
-> 🐧 **AI 学习群：1132348296**（在 QQ 里搜群号就能加）— 插件怎么做、怎么上架、怎么被更多人看到，群里都有现成答案。
+> 🐧 **AI 学习群 1132348296** · niko 在这儿，插件我写、方向我找、坑我踩。 插件怎么做、怎么上架、怎么被更多人看到，群里都有现成答案。
 
 ![仓库雷达演示：盯一个仓库，有动静就唤醒会话](docs/demo.gif)
 
@@ -20,7 +20,7 @@
 
 ```bash
 # 装 Release 里的预构建包（当前可用）
-dsh plugin --profile desktop add https://github.com/clair0314/dsh-repo-watcher/releases/download/v0.1.0/dsh-repo-watcher-0.1.0.tgz
+dsh plugin --profile desktop add https://github.com/nekonya77/dsh-repo-watcher/releases/download/v0.1.0/dsh-repo-watcher-0.1.0.tgz
 ```
 
 发布到 npm 之后，也可以直接 `dsh plugin --profile desktop add dsh-repo-watcher`。
